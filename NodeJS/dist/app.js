@@ -1,0 +1,26 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var aes_decrypt_3_1 = require("./aes-decrypt-3");
+var utils_1 = require("./utils");
+console.log("Test Decryption Node program \n");
+var secretIdPermanceKey = '90733A75F19347118B3BE0030AB590A8';
+var stringToDecrypt = 'LLYblEfzo/1yQNkqoDn5QQ==';
+var softwareID = '36094666-7e37-4717-8ab0-0c3d3485f56e';
+var stringToEncrypt = "koss.blake";
+var encryptionKey = "".concat(softwareID).concat(secretIdPermanceKey);
+var aes3 = new aes_decrypt_3_1.AesDecrypt3();
+console.log("Encrypting: ".concat(stringToEncrypt));
+var encryptedBuffer = aes3.encrypt(encryptionKey, stringToEncrypt);
+console.log("Expected result is (should be same as .NET): ".concat(stringToDecrypt));
+var actualEncrypyedString = utils_1.DsbUtils.uint8ToBase64(encryptedBuffer);
+console.log("Actual result is:  ".concat(actualEncrypyedString, " \n"));
+console.log("Decrypting the NodeJS encrypted: ".concat(actualEncrypyedString));
+var decryptedActual = aes3.decrypt(encryptionKey, encryptedBuffer);
+console.log("Expected result is: ".concat(stringToEncrypt));
+console.log("Actual result is:  ".concat(decryptedActual, " \n"));
+console.log("Decrypting the NET Core encrypted: ".concat(stringToDecrypt));
+var buffer = Buffer.from(stringToDecrypt, 'base64');
+var decryptedString = aes3.decrypt(encryptionKey, buffer);
+console.log("Expected result is: ".concat(stringToEncrypt));
+console.log("Actual result is:  ".concat(decryptedString, " \n"));
+//# sourceMappingURL=app.js.map
