@@ -27,7 +27,7 @@ exports.AesDecrypt3 = void 0;
 var crypto = __importStar(require("crypto"));
 var crypto_1 = require("crypto");
 var util_1 = require("util");
-var utils_1 = require("./utils");
+var zlib = __importStar(require("node:zlib"));
 var AesDecrypt3 = /** @class */ (function () {
     function AesDecrypt3() {
         this.algorithm = 'AES-192-CBC';
@@ -41,18 +41,27 @@ var AesDecrypt3 = /** @class */ (function () {
         return keyH;
     };
     AesDecrypt3.prototype.decrypt = function (encryptionKey, bufferToDecrypt) {
+        // get the encryption key
         var key = this.getEncrptionKey(encryptionKey);
-        var mykey = crypto.createDecipheriv('aes-192-cbc', key, this.IV);
-        var buf = mykey.update(bufferToDecrypt);
-        var st = buf.toString('utf-8') + mykey.final('utf-8');
-        return st;
+        var decipher = crypto.createDecipheriv('aes-192-cbc', key, this.IV);
+        // decrypt the buffer
+        var decryptedBuffer = decipher.update(bufferToDecrypt);
+        decryptedBuffer = Buffer.concat([decryptedBuffer, decipher.final()]);
+        // decompress the buffer
+        var decompressedBuffer = zlib.inflateRawSync(decryptedBuffer);
+        var decryptedString = decompressedBuffer.toString('utf-8');
+        return decryptedString;
     };
     AesDecrypt3.prototype.encrypt = function (encryptionKey, stringToEncrypt) {
+        var buf = Buffer.from(stringToEncrypt, 'utf-8');
+        // create the compressed buffer
+        var compressedBuffer = zlib.deflateRawSync(buf);
+        // get the encryption key
         var key = this.getEncrptionKey(encryptionKey);
-        var mykey = (0, crypto_1.createCipheriv)('aes-192-cbc', key, this.IV);
-        var mystr = mykey.update(stringToEncrypt.toString(), 'utf-8', 'base64');
-        mystr += mykey.final('base64');
-        return utils_1.DsbUtils.base64ToUint8(mystr);
+        var cipher = (0, crypto_1.createCipheriv)('aes-192-cbc', key, this.IV);
+        // now encrypt
+        var encryptedBuffer = cipher.update(compressedBuffer);
+        return Buffer.concat([encryptedBuffer, cipher.final()]);
     };
     return AesDecrypt3;
 }());

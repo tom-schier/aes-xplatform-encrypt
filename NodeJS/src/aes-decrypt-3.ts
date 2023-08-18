@@ -5,6 +5,7 @@ import { createCipheriv } from 'crypto';
 import { enc } from 'crypto-js';
 import { TextEncoder } from 'util';
 import { DsbUtils } from './utils';
+import * as zlib from 'node:zlib'
 
 export class AesDecrypt3  {
 
@@ -24,19 +25,30 @@ export class AesDecrypt3  {
     }
 
     decrypt(encryptionKey: string, bufferToDecrypt: Uint8Array) : string {
+        // get the encryption key
         let key = this.getEncrptionKey(encryptionKey);
-        var mykey = crypto.createDecipheriv('aes-192-cbc', key, this.IV);
-        var buf = mykey.update(bufferToDecrypt);
-        let st = buf.toString('utf-8') + mykey.final('utf-8');
-        return st;
+        var decipher : crypto.Decipher = crypto.createDecipheriv('aes-192-cbc', key, this.IV);
+        
+        // decrypt the buffer
+        var decryptedBuffer = decipher.update(bufferToDecrypt);
+        decryptedBuffer = Buffer.concat([decryptedBuffer, decipher.final()]);
+
+        // decompress the buffer
+        let decompressedBuffer = zlib.inflateRawSync(decryptedBuffer);
+        let decryptedString = decompressedBuffer.toString('utf-8')
+        return decryptedString;
     }
 
     encrypt(encryptionKey: string, stringToEncrypt: string) : Uint8Array {
+        let buf = Buffer.from(stringToEncrypt, 'utf-8');
+        // create the compressed buffer
+        let compressedBuffer = zlib.deflateRawSync(buf);
+        // get the encryption key
         let key = this.getEncrptionKey(encryptionKey);
-        var mykey = createCipheriv('aes-192-cbc', key, this.IV);
-        var mystr = mykey.update(stringToEncrypt.toString(), 'utf-8', 'base64')
-        mystr += mykey.final('base64');
-        return DsbUtils.base64ToUint8(mystr);
+        var cipher = createCipheriv('aes-192-cbc', key, this.IV);
+        // now encrypt
+        var encryptedBuffer = cipher.update(compressedBuffer);
+        return Buffer.concat([encryptedBuffer, cipher.final()]);
     }
 
 }
